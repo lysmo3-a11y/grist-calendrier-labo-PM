@@ -582,7 +582,7 @@
           id="todayBtn"
           class="btn"
         >
-          Aujourd'hui
+          Today
         </button>
 
         <button
@@ -847,7 +847,7 @@
     function formatDate(date) {
 
       return date.toLocaleDateString(
-        "fr-FR",
+        "en-US",
         {
           day: "2-digit",
           month: "2-digit",
@@ -1444,7 +1444,7 @@ function renderLegend() {
   document.getElementById("monthTitle").textContent = formatMonth(currentDate);
 
   // 2. Jours de la semaine (Lun, Mar, etc.)
-  const weekdays = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+  const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   weekdays.forEach(day => {
     const element = document.createElement("div");
     element.className = "weekday";
