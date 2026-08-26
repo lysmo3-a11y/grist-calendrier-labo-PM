@@ -1436,145 +1436,66 @@ function renderLegend() {
        RENDU DU CALENDRIER
     ======================================================== */
 
-    function renderCalendar() {
+ function renderCalendar() {
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML = "";
 
-      const calendar =
-        document.getElementById(
-          "calendar"
-        );
+  // 1. Titre du mois
+  document.getElementById("monthTitle").textContent = formatMonth(currentDate);
 
-      calendar.innerHTML = "";
-/*
- * Nombre de semaines nécessaires pour le mois.
- */
-        const firstDay =
-          new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
-            1
-        );
+  // 2. Jours de la semaine (Lun, Mar, etc.)
+  const weekdays = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+  weekdays.forEach(day => {
+    const element = document.createElement("div");
+    element.className = "weekday";
+    element.textContent = day;
+    calendar.appendChild(element);
+  });
 
-        const firstWeekday =
-          (firstDay.getDay() + 6) % 7;
+  // 3. Calcul du premier jour du mois et de l'offset
+  const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  let offset = firstDay.getDay() - 1; // Lundi = 0
+  if (offset < 0) offset = 6; // Si dimanche, offset = 6
 
-        const daysInMonth =
-          new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth() + 1,
-            0
-           ).getDate();
+  // 4. Date de départ (premier jour à afficher, peut être du mois précédent)
+  const gridStart = addDays(firstDay, -offset);
 
-        const weekCount =
-          Math.ceil(
-            (firstWeekday + daysInMonth) / 7
-          );
+  // 5. Nombre de jours dans le mois
+  const daysInMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0
+  ).getDate();
 
+  // 6. Dernier jour du mois
+  const lastDay = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    daysInMonth
+  );
 
-/*
- * On adapte automatiquement la hauteur
- * du calendrier au nombre de semaines.
- */
-calendar.style.setProperty(
-  "--week-count",
-  weekCount
-);
+  // 7. Calcul du nombre total de jours à afficher
+  // On commence à `gridStart` et on va jusqu'à la fin de la semaine du dernier jour du mois
+  const lastWeekday = lastDay.getDay(); // 0 (dimanche) à 6 (samedi)
+  const daysFromNextMonth = (6 - lastWeekday) % 7; // Jours du mois suivant pour compléter la semaine
 
-      for (
-  let dayNumber = 1;
-  dayNumber <= daysInMonth;
-  dayNumber++
-) {
+  // 8. Nombre total de jours = offset (mois précédent) + daysInMonth + daysFromNextMonth
+  const totalDays = offset + daysInMonth + daysFromNextMonth;
 
-  const day =
-    new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      dayNumber
-    );
+  // 9. Nombre de lignes (semaines) nécessaires
+  const weekCount = Math.ceil(totalDays / 7);
+  calendar.style.setProperty("--week-count", weekCount);
 
-  const cell =
-    createDayCell(
-      day,
-      currentDate.getMonth()
-    );
+  // 10. Ajouter les cases pour chaque jour
+  for (let i = 0; i < totalDays; i++) {
+    const day = addDays(gridStart, i);
+    const cell = createDayCell(day, currentDate.getMonth());
+    calendar.appendChild(cell);
+  }
 
-  calendar.appendChild(cell);
-
+  // 11. Rend la légende
+  renderLegend();
 }
-      /*
-       * TITRE
-       */
-
-      document.getElementById(
-        "monthTitle"
-      ).textContent =
-        formatMonth(currentDate);
-
-
-      /*
-       * JOURS DE LA SEMAINE
-       */
-
-      const weekdays = [
-        "Lun",
-        "Mar",
-        "Mer",
-        "Jeu",
-        "Ven",
-        "Sam",
-        "Dim"
-      ];
-
-
-      weekdays.forEach(
-        day => {
-
-          const element =
-            document.createElement("div");
-
-          element.className =
-            "weekday";
-
-          element.textContent =
-            day;
-
-          calendar.appendChild(
-            element
-          );
-
-        }
-      );
-
-
-      /*
-       * Premier jour du mois
-       */
-
-      const firstDay =
-        new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          1
-        );
-
-
-      /*
-       * En JS :
-       * dimanche = 0
-       * lundi = 1
-       *
-       * On veut lundi = 0
-       */
-
-      let offset =
-        firstDay.getDay() - 1;
-
-      if (offset < 0) {
-        offset = 6;
-      }
-
-
-
 
     /* ========================================================
        NAVIGATION
