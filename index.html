@@ -614,38 +614,12 @@
       </div>
 
 
-      <div class="header-right">
-
-        <div class="legend">
-
-          <div class="legend-item">
-            <span
-              class="legend-dot"
-              style="background:#FF5733"
-            ></span>
-            Conférence
-          </div>
-
-          <div class="legend-item">
-            <span
-              class="legend-dot"
-              style="background:#33FF57"
-            ></span>
-            Réunion
-          </div>
-
-          <div class="legend-item">
-            <span
-              class="legend-dot"
-              style="background:#4e33ff"
-            ></span>
-            Séminaire
-          </div>
-
-        </div>
-
-      </div>
-
+<div class="header-right">
+  <div
+    id="legend"
+    class="legend"
+  ></div>
+</div>
     </header>
 
 
@@ -1364,7 +1338,100 @@
       return cell;
     }
 
+/* ========================================================
+   LEGENDE AUTOMATIQUE
+   ======================================================== */
 
+function renderLegend() {
+
+  const legend =
+    document.getElementById("legend");
+
+  if (!legend) {
+    return;
+  }
+
+  /*
+   * On vide la légende actuelle
+   */
+  legend.innerHTML = "";
+
+  /*
+   * On crée une catégorie unique
+   * pour chaque type d'événement.
+   *
+   * Exemple :
+   * Conférence → #FF5733
+   * Réunion    → #33FF57
+   * Séminaire  → #4e33ff
+   */
+
+  const categories = new Map();
+
+  events.forEach(event => {
+
+    if (!event.category) {
+      return;
+    }
+
+    /*
+     * Si plusieurs événements ont la même
+     * catégorie, on garde la première couleur
+     * trouvée.
+     */
+
+    if (!categories.has(event.category)) {
+
+      categories.set(
+        event.category,
+        event.color
+      );
+
+    }
+
+  });
+
+
+  /*
+   * Création visuelle de chaque catégorie
+   */
+
+  categories.forEach(
+    (color, category) => {
+
+      const item =
+        document.createElement("div");
+
+      item.className =
+        "legend-item";
+
+
+      const dot =
+        document.createElement("span");
+
+      dot.className =
+        "legend-dot";
+
+      dot.style.background =
+        color;
+
+
+      const label =
+        document.createElement("span");
+
+      label.textContent =
+        category;
+
+
+      item.appendChild(dot);
+      item.appendChild(label);
+
+      legend.appendChild(item);
+
+    }
+  );
+
+}
     /* ========================================================
        RENDU DU CALENDRIER
     ======================================================== */
@@ -1563,17 +1630,10 @@
 
           events =
             records
-              .map(record => {
-
-                /*
-                 * Les noms demandés dans ready()
-                 * sont conservés dans record.
-                 */
-
-                return normalizeEvent(record);
-
-              })
-              .filter(Boolean);
+            .map(record => {
+              return normalizeEvent(record);
+            })
+    .filter(Boolean);
 
 
           document.getElementById(
@@ -1581,8 +1641,10 @@
           ).style.display = "none";
 
 
-          renderCalendar();
+          renderLegend();
 
+          renderCalendar();
+          
         } catch (error) {
 
           console.error(error);
