@@ -1574,41 +1574,6 @@ calendar.style.setProperty(
       }
 
 
-      /*
-       * On affiche toujours 42 cases
-       * = 6 semaines
-       */
-
-      const gridStart =
-        addDays(
-          firstDay,
-          -offset
-        );
-
-
-      for (
-        let i = 0;
-        i < 42;
-        i++
-      ) {
-
-        const day =
-          addDays(
-            gridStart,
-            i
-          );
-
-        const cell =
-          createDayCell(
-            day,
-            currentDate.getMonth()
-          );
-
-        calendar.appendChild(cell);
-
-      }
-
-    }
 
 
     /* ========================================================
