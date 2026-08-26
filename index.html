@@ -1479,6 +1479,28 @@ calendar.style.setProperty(
   weekCount
 );
 
+      for (
+  let dayNumber = 1;
+  dayNumber <= daysInMonth;
+  dayNumber++
+) {
+
+  const day =
+    new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      dayNumber
+    );
+
+  const cell =
+    createDayCell(
+      day,
+      currentDate.getMonth()
+    );
+
+  calendar.appendChild(cell);
+
+}
       /*
        * TITRE
        */
