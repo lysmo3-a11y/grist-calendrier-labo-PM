@@ -51,7 +51,7 @@ main{flex:1;min-height:0;padding:12px}
 <main><div id="cal"></div></main>
 </div>
 <script>
-const ZONE='Europe/Paris',$=id=>document.getElementById(id);
+const ZONE='Europe/Paris',$=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const arr=v=>Array.isArray(v)?(v[0]==='L'?v.slice(1):v):v;
 /* Any Grist date/datetime value (seconds, ms or Date) -> Date */
