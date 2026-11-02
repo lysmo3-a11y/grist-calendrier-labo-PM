@@ -123,6 +123,8 @@ const leap=y=>y%4===0&&(y%100!==0||y%400===0);
 
 let E=[];
 let B=[];
+ /* Date de départ du calendrier : lundi de cette semaine */
+let cur=monday(new Date());
 
 /* Lundi de la semaine contenant la date donnée */
 function monday(d){
@@ -133,8 +135,7 @@ function monday(d){
  return x;
 }
 
-/* Date de départ du calendrier : lundi de cette semaine */
-let cur=monday(new Date());
+
 
 /* Lecture des anniversaires */
 function birthdayDate(v){
