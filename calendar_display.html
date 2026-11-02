@@ -1,11 +1,11 @@
-<!doctype html>
+!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lab calendar</title>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 <style>
-/* Palette as the inventory widget */
+/* Same palette as the inventory widget */
 :root{--navy:#0b2447;--teal:#00a6b2;--tealbg:#e3f5f6;--bg:#f4f6f9;--line:#d9e0ea;--txt:#1b2733;--mute:#6a7a8c;color-scheme:light}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;font:14px/1.4 Figtree,system-ui,sans-serif;color:var(--txt);background:var(--bg)}
@@ -21,8 +21,8 @@ header h1{font-size:15px;font-weight:600;margin:0;white-space:nowrap}
 #legend{margin-left:auto;display:flex;gap:4px 14px;flex-wrap:wrap;justify-content:flex-end;max-height:44px;overflow:hidden}
 .lg{display:flex;align-items:center;gap:5px;font-size:12px;color:#d6e0f0;white-space:nowrap}
 .lg i{width:9px;height:9px;border-radius:50%;display:block}
-main{flex:1;min-height:0;padding:12px}
-#cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:34px repeat(var(--w,5),minmax(0,1fr));height:100%;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+main{flex:1;min-height:0;padding:12px;display:flex;flex-direction:column}
+#cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:34px repeat(var(--w,5),minmax(0,1fr));flex:1;min-height:0;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .wd{display:flex;align-items:center;justify-content:center;background:#eef2f7;font-weight:600;font-size:12.5px;color:var(--navy);border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
 .wd:nth-child(7){border-right:0}
 .day{position:relative;min-height:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;background:#fff}
@@ -52,6 +52,7 @@ main{flex:1;min-height:0;padding:12px}
 </div>
 <script>
 const ZONE='Europe/Paris',$=s=>document.querySelector(s);
+window.onerror=m=>{const x=$('#msg');if(x){x.style.display='block';x.textContent='Script error: '+m}};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const arr=v=>Array.isArray(v)?(v[0]==='L'?v.slice(1):v):v;
 /* Any Grist date/datetime value (seconds, ms or Date) -> Date */
@@ -61,7 +62,7 @@ const dayTs=d=>Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());
 const nowD=new Date(),todayTs=Date.UTC(nowD.getFullYear(),nowD.getMonth(),nowD.getDate());
 const leap=y=>y%4===0&&(y%100!==0||y%400===0);
 let E=[],B=[],cur=new Date(nowD.getFullYear(),nowD.getMonth(),1);
-
+ 
 grist.ready({requiredAccess:'full',columns:[
   {name:'Evenements',title:'Event',type:'Text'},
   {name:'Date_de_debut',title:'Start date',type:'Date'},
@@ -72,7 +73,7 @@ grist.ready({requiredAccess:'full',columns:[
   {name:'Categorie',title:'Category',type:'ChoiceList',optional:true},
   {name:'Couleur',title:'Color (#RRGGBB)',type:'Text',optional:true},
   {name:'Duree',title:'Duration',type:'Text',optional:true}]});
-
+ 
 function norm(r){
   const a=toD(r.Date_de_debut);if(!a)return null;
   const s=dayTs(a),b=toD(r.Date_de_fin),e=b?Math.max(s,dayTs(b)):s;
@@ -115,9 +116,7 @@ async function loadB(){
   render();
 }
 grist.onRecords(recs=>{
-  const r=grist.mapColumnNames(recs);
-  if(!r){$('#msg').style.display='block';$('#msg').textContent='Map the Event, Start date and End date columns in the widget settings.';return}
-  $('#msg').style.display='none';
+  const r=grist.mapColumnNames(recs)||recs;   // falls back to raw column names, like the old version
   E=r.map(norm).filter(Boolean);render();loadB();
 });
 $('#cal').onclick=e=>{const x=e.target.closest('.ev');if(x)grist.setCursorPos({rowId:+x.dataset.id})};
