@@ -26,7 +26,6 @@ header h1{font-size:15px;font-weight:600;margin:0;white-space:nowrap}
 .lg i{width:9px;height:9px;border-radius:50%;display:block}
 
 main{flex:1;min-height:0;padding:12px;display:flex;flex-direction:column}
-
 #cal{
  display:grid;
  grid-template-columns:repeat(7,minmax(0,1fr));
@@ -35,28 +34,20 @@ main{flex:1;min-height:0;padding:12px;display:flex;flex-direction:column}
  background:#fff;border:1px solid var(--line);
  border-radius:8px;overflow:hidden
 }
-
 .wd{display:flex;align-items:center;justify-content:center;background:#eef2f7;font-weight:600;font-size:13px;color:var(--navy);border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
 .wd:nth-child(7){border-right:0}
-
 .day{position:relative;min-height:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;background:#fff}
 .day:nth-child(7n){border-right:0}
 .day.today{background:#f1fafb}
-
 .dn{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;margin:5px;font-weight:600;font-size:15px;color:#46515e}
 .today .dn{background:var(--teal);color:#fff;border-radius:50%}
-
 .bday{position:absolute;top:8px;right:8px;font-size:18px;line-height:1;cursor:default}
-
 .evs{position:absolute;top:40px;left:5px;right:5px;bottom:5px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
-
 .ev{position:relative;margin-bottom:6px;padding:7px 7px 8px 11px;border-radius:6px;cursor:pointer;background:color-mix(in srgb,var(--c) 13%,#fff);border:1px solid color-mix(in srgb,var(--c) 22%,#fff);overflow:hidden}
 .ev::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
 .ev:hover{box-shadow:0 2px 8px rgba(11,36,71,.18)}
-
 .et{font-size:13px;font-weight:700;line-height:1.3;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .ed{font-size:12px;color:var(--mute);line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
 #msg{display:none;margin:12px 12px 0;padding:10px 14px;background:#fde8ea;color:#c62f3a;border-radius:6px}
 
 @media(max-width:800px){
@@ -88,38 +79,51 @@ main{flex:1;min-height:0;padding:12px;display:flex;flex-direction:column}
   </div>
   <div id="legend"></div>
 </header>
-
 <div id="msg"></div>
 <main><div id="cal"></div></main>
 </div>
 
 <script>
-const ZONE='Europe/Paris',$=s=>document.querySelector(s);
+(function(){
+
+const ZONE='Europe/Paris';
+const $=s=>document.querySelector(s);
 
 window.onerror=m=>{
  const x=$('#msg');
- if(x){x.style.display='block';x.textContent='Script error: '+m}
+ if(x){
+  x.style.display='block';
+  x.textContent='Script error: '+m;
+ }
 };
 
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const arr=v=>Array.isArray(v)?(v[0]==='L'?v.slice(1):v):v;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({
+ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'
+}[c]));
 
 const toD=v=>{
  if(v==null||v==='')return null;
- const d=v instanceof Date?v:new Date(typeof v==='number'&&v<1e11?v*1000:v);
- return isNaN(d)?null:d;
+ const d=v instanceof Date?v:new Date(
+  typeof v==='number'&&v<1e11?v*1000:v
+ );
+ return isNaN(d.getTime())?null:d;
 };
 
-const dayTs=d=>Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());
+const dayTs=d=>Date.UTC(
+ d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()
+);
 
 const nowD=new Date();
-const todayTs=Date.UTC(nowD.getFullYear(),nowD.getMonth(),nowD.getDate());
+const todayTs=Date.UTC(
+ nowD.getFullYear(),nowD.getMonth(),nowD.getDate()
+);
 
 const leap=y=>y%4===0&&(y%100!==0||y%400===0);
 
-let E=[],B=[];
+let E=[];
+let B=[];
 
-/* Positionner cur sur le lundi de la semaine actuelle */
+/* Lundi de la semaine actuelle */
 function monday(d){
  const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
  x.setDate(x.getDate()-((x.getDay()+6)%7));
@@ -128,105 +132,198 @@ function monday(d){
 
 let cur=monday(nowD);
 
-grist.ready({requiredAccess:'full',columns:[
- {name:'Evenements',title:'Event',type:'Text'},
- {name:'Date_de_debut',title:'Start date',type:'Date'},
- {name:'Date_de_fin',title:'End date',type:'Date'},
- {name:'Starting_hour',title:'Start time',type:'DateTime',optional:true},
- {name:'All_day_',title:'All day',type:'Bool',optional:true},
- {name:'Lieu',title:'Place',type:'Text',optional:true},
- {name:'Categorie',title:'Category',type:'ChoiceList',optional:true},
- {name:'Couleur',title:'Color (#RRGGBB)',type:'Text',optional:true},
- {name:'Duree',title:'Duration',type:'Text',optional:true}
-]});
+/* Normalisation des catégories : Choice ou ChoiceList */
+function getCategory(v){
+ if(v==null||v==='')return '';
+ if(Array.isArray(v)){
+  return v.filter(Boolean).join(', ');
+ }
+ return String(v).trim();
+}
+
+/* Lecture fiable des anniversaires */
+function birthdayDate(v){
+ if(v==null||v==='')return null;
+
+ // Une date Grist peut arriver sous forme YYYY-MM-DD
+ if(typeof v==='string'){
+  const match=v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(match){
+   return {
+    m:Number(match[2])-1,
+    d:Number(match[3])
+   };
+  }
+ }
+
+ const d=toD(v);
+ if(!d)return null;
+
+ return {
+  m:d.getUTCMonth(),
+  d:d.getUTCDate()
+ };
+}
+
+grist.ready({
+ requiredAccess:'full',
+ columns:[
+  {name:'Evenements',title:'Event',type:'Text'},
+  {name:'Date_de_debut',title:'Start date',type:'Date'},
+  {name:'Date_de_fin',title:'End date',type:'Date'},
+  {name:'Starting_hour',title:'Start time',type:'DateTime',optional:true},
+  {name:'All_day_',title:'All day',type:'Bool',optional:true},
+  {name:'Lieu',title:'Place',type:'Text',optional:true},
+  {name:'Categorie',title:'Category',type:'Choice',optional:true},
+  {name:'Couleur',title:'Color (#RRGGBB)',type:'Text',optional:true},
+  {name:'Duree',title:'Duration',type:'Text',optional:true}
+ ]
+});
 
 function norm(r){
  const a=toD(r.Date_de_debut);
  if(!a)return null;
- const s=dayTs(a),b=toD(r.Date_de_fin),e=b?Math.max(s,dayTs(b)):s;
- const h=toD(r.Starting_hour);
- const col=/^#[0-9a-f]{6}$/i.test((r.Couleur||'').trim())?r.Couleur.trim():'#00a6b2';
 
- return{
-  id:r.id,title:r.Evenements||'Untitled event',s,e,
+ const s=dayTs(a);
+ const b=toD(r.Date_de_fin);
+ const e=b?Math.max(s,dayTs(b)):s;
+ const h=toD(r.Starting_hour);
+
+ const rawColor=String(r.Couleur||'').trim();
+ const col=/^#[0-9a-f]{6}$/i.test(rawColor)
+  ?rawColor:'#00a6b2';
+
+ return {
+  id:r.id,
+  title:r.Evenements||'Untitled event',
+  s,e,
   allDay:!!r.All_day_,
-  time:h?h.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',timeZone:ZONE}):'',
+  time:h?h.toLocaleTimeString('fr-FR',{
+   hour:'2-digit',
+   minute:'2-digit',
+   timeZone:ZONE
+  }):'',
   loc:r.Lieu||'',
-  cat:[].concat(arr(r.Categorie)||[]).join(', '),
-  dur:r.Duree||'',col
+  cat:getCategory(r.Categorie),
+  dur:r.Duree||'',
+  col
  };
 }
 
 function birthdaysOn(ts){
- const d=new Date(ts),m=d.getUTCMonth(),n=d.getUTCDate(),y=d.getUTCFullYear();
- return B.filter(b=>b.m===m&&(b.d===n||(b.m===1&&b.d===29&&n===28&&!leap(y)))).map(b=>b.n);
+ const d=new Date(ts);
+ const m=d.getUTCMonth();
+ const n=d.getUTCDate();
+ const y=d.getUTCFullYear();
+
+ return B.filter(b=>
+  b.m===m&&(
+   b.d===n||
+   (b.m===1&&b.d===29&&n===28&&!leap(y))
+  )
+ ).map(b=>b.n);
 }
 
-/* Affichage des icônes directement en caractères */
+/* Événements avec icônes directement écrites */
 function ev(e){
  let meta=[];
- if(e.allDay)meta.push('🕒 Toute la journée');
- else if(e.time)meta.push('🕒 '+e.time);
+
+ if(e.allDay){
+  meta.push('🕒 Toute la journée');
+ }else if(e.time){
+  meta.push('🕒 '+e.time);
+ }
+
  if(e.loc)meta.push('📍 '+e.loc);
  if(e.dur)meta.push('⏳ '+e.dur);
 
- return `<div class="ev" data-id="${e.id}" style="--c:${e.col}"
- title="${esc([e.title,e.time,e.loc,e.dur,e.cat].filter(Boolean).join('\n'))}">
- <div class="et">${esc(e.title)}</div>
- ${meta.map(x=>`<div class="ed">${esc(x)}</div>`).join('')}
+ return `
+ <div class="ev" data-id="${e.id}" style="--c:${e.col}"
+ title="${esc([e.title,e.time,e.loc,e.cat,e.dur].filter(Boolean).join('\n'))}">
+  <div class="et">${esc(e.title)}</div>
+  ${meta.map(x=>`<div class="ed">${esc(x)}</div>`).join('')}
  </div>`;
 }
 
 function render(){
- /* Toujours exactement 21 jours, à partir du lundi de cur */
+
+ // Exactement 21 jours à partir du lundi
  const start=new Date(cur.getFullYear(),cur.getMonth(),cur.getDate());
  const end=new Date(start);
  end.setDate(end.getDate()+20);
 
- const options={day:'numeric',month:'short'};
  $('#mt').textContent=
- start.toLocaleDateString('fr-FR',options)+' – '+
- end.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  start.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})
+  +' – '+
+  end.toLocaleDateString('fr-FR',{
+   day:'numeric',month:'long',year:'numeric'
+  });
 
- let h=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
-  .map(d=>`<div class="wd">${d}</div>`).join('');
+ let h=[
+  'Lun','Mar','Mer','Jeu','Ven','Sam','Dim'
+ ].map(d=>`<div class="wd">${d}</div>`).join('');
 
  for(let i=0;i<21;i++){
+
   const d=new Date(start);
   d.setDate(start.getDate()+i);
+
   const ts=dayTs(d);
   const bd=birthdaysOn(ts);
 
   const events=E.filter(e=>e.s<=ts&&ts<=e.e)
-   .sort((a,b)=>(a.allDay-b.allDay)||a.time.localeCompare(b.time));
+   .sort((a,b)=>
+    (a.allDay-b.allDay)||a.time.localeCompare(b.time)
+   );
 
-  h+=`<div class="day ${ts===todayTs?'today':''}">
-   <div class="dn">${d.getDate()}</div>
-   ${bd.length?`<span class="bday" title="Birthday: ${esc(bd.join(', '))}">🥳</span>`:''}
-   <div class="evs">${events.map(ev).join('')}</div>
-  </div>`;
+  h+=`
+   <div class="day ${ts===todayTs?'today':''}">
+    <div class="dn">${d.getDate()}</div>
+    ${bd.length
+     ?`<span class="bday" title="Birthday: ${esc(bd.join(', '))}">🥳</span>`
+     :''}
+    <div class="evs">${events.map(ev).join('')}</div>
+   </div>`;
  }
 
  $('#cal').innerHTML=h;
 
+ // Légende des catégories
  const cats=new Map();
- E.forEach(e=>{if(e.cat&&!cats.has(e.cat))cats.set(e.cat,e.col)});
+
+ E.forEach(e=>{
+  if(e.cat&&!cats.has(e.cat)){
+   cats.set(e.cat,e.col);
+  }
+ });
+
  $('#legend').innerHTML=[...cats].map(([c,k])=>
   `<span class="lg"><i style="background:${k}"></i>${esc(c)}</span>`
  ).join('');
 }
 
+/* Chargement des anniversaires */
 async function loadB(){
  try{
   const t=await grist.docApi.fetchTable('Birthdays');
+
   B=(t.id||[]).map((_,i)=>{
-   const d=toD(t.Birth_Date[i]);
-   return d&&t.Name[i]?{n:t.Name[i],m:d.getUTCMonth(),d:d.getUTCDate()}:null;
+   const d=birthdayDate(t.Birth_Date[i]);
+   const name=t.Name[i];
+
+   return d&&name
+    ?{n:name,m:d.m,d:d.d}
+    :null;
   }).filter(Boolean);
- }catch(e){B=[]}
+
+ }catch(e){
+  B=[];
+ }
+
  render();
 }
 
+/* Chargement des événements */
 grist.onRecords(recs=>{
  const r=grist.mapColumnNames(recs)||recs;
  E=r.map(norm).filter(Boolean);
@@ -234,9 +331,12 @@ grist.onRecords(recs=>{
  loadB();
 });
 
+/* Clic sur événement : sélection de la ligne Grist */
 $('#cal').onclick=e=>{
  const x=e.target.closest('.ev');
- if(x)grist.setCursorPos({rowId:+x.dataset.id});
+ if(x){
+  grist.setCursorPos({rowId:+x.dataset.id});
+ }
 };
 
 /* Navigation par semaine */
@@ -257,7 +357,10 @@ $('#today').onclick=()=>{
 };
 
 window.addEventListener('focus',loadB);
+
 render();
+
+})();
 </script>
 </body>
 </html>
